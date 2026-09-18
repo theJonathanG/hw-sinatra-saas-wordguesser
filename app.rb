@@ -39,8 +39,19 @@ class WordGuesserApp < Sinatra::Base
   # If a guess is repeated, set flash[:message] to "You have already used that letter."
   # If a guess is invalid, set flash[:message] to "Invalid guess."
   post '/guess' do
-    params[:guess].to_s[0]
-    ### YOUR CODE HERE ###
+    letter = params[:guess].to_s[0]
+
+    #Checks if the guess is valid and updates the game state accordingly
+    begin
+      guess_result = @game.guess(letter)
+      if !guess_result
+        flash[:message] = "You have already used that letter."
+      end
+
+    rescue ArgumentError
+      flash[:message] = "Invalid guess."
+    end
+
     redirect '/show'
   end
 
@@ -50,17 +61,38 @@ class WordGuesserApp < Sinatra::Base
   # Notice that the show.erb template expects to use the instance variables
   # wrong_guesses and word_with_guesses from @game.
   get '/show' do
-    ### YOUR CODE HERE ###
-    erb :show # You may change/remove this line
+    if @game.word.nil? || @game.word.empty?
+      redirect '/new'
+      return
+    end
+
+    #Checks the game state and redirects to the appropriate route based 
+    #on whether the player has won, lost, or is still playing
+    case @game.check_win_or_lose
+    when :win
+      redirect '/win'
+    when :lose
+      redirect '/lose'
+    else
+      erb :show
+    end
   end
 
   get '/win' do
-    ### YOUR CODE HERE ###
+    #Checks if the game state is not a win and redirects to /show if it is not
+    if @game.word.nil? || @game.word.empty? || @game.check_win_or_lose != :win
+      redirect '/show'
+    end
+
     erb :win # You may change/remove this line
   end
-
+  
   get '/lose' do
-    ### YOUR CODE HERE ###
+    #Checks if the game state is not a lose and redirects to /show if it is not
+    if @game.word.nil? || @game.word.empty? || @game.check_win_or_lose != :lose
+      redirect '/show'
+    end
+
     erb :lose # You may change/remove this line
   end
 end
